@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LUNA PURE - The Aurora Moon</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.1.1/model-viewer.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #111111;
+            --accent-color: #d4af37;
+            --gray-light: #f5f5f5;
+            --aqi-blue: #00b0f0;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg-color: #111111;
+                --text-color: #ffffff;
+                --gray-light: #222222;
+            }
+        }
+
+        body {
+            font-family: 'Prompt', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            transition: background-color 0.3s, color 0.3s;
+            scroll-behavior: smooth;
+        }
+
+        /* Navbar */
+        nav {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 1rem 5%; position: sticky; top: 0; background: var(--bg-color);
+            z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        .nav-links { display: flex; gap: 20px; }
+        .nav-links a { color: var(--text-color); text-decoration: none; font-size: 0.9rem; transition: 0.2s;}
+        .nav-links a:hover { color: var(--accent-color); }
+        .nav-icons { display: flex; gap: 15px; align-items: center; }
+        .icon-btn { cursor: pointer; position: relative; font-size: 1.2rem; }
+        .badge {
+            position: absolute; top: -5px; right: -8px; background: red; color: white;
+            font-size: 0.6rem; border-radius: 50%; padding: 2px 5px; display: none;
+        }
+
+        /* Custom Toast Notification */
+        #toast {
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            background: var(--text-color); color: var(--bg-color);
+            padding: 12px 24px; border-radius: 30px; font-weight: 600; font-size: 0.9rem;
+            z-index: 3000; opacity: 0; visibility: hidden; transition: all 0.4s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 10px;
+        }
+        #toast.show { opacity: 1; visibility: visible; top: 40px; }
+
+        /* Modals (Cart, Wishlist, Checkout) */
+        .modal {
+            display: none; position: fixed; top: 0; right: 0; width: 350px; max-width: 100vw; height: 100%;
+            background: var(--bg-color); box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+            z-index: 2000; padding: 20px; flex-direction: column; box-sizing: border-box;
+            border-left: 1px solid var(--gray-light);
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; font-weight: 600;}
+        .close-btn { cursor: pointer; font-size: 1.2rem; }
+        .modal-items { flex-grow: 1; overflow-y: auto; }
+        .cart-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid var(--gray-light); }
+        .cart-item img { width: 50px; height: 50px; object-fit: cover; border-radius: 8px; background: #fff;}
+        .cart-item-info { flex-grow: 1; margin-left: 10px; }
+        .cart-item-info h4 { margin: 0; font-size: 0.9rem; }
+        .cart-item-info p { margin: 0; font-size: 0.8rem; color: gray; }
+        .modal-footer { margin-top: 20px; }
+        .checkout-btn { width: 100%; padding: 12px; background: var(--text-color); color: var(--bg-color); border: none; border-radius: 8px; cursor: pointer; font-family: 'Prompt'; font-weight: 600;}
+        
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 0.85rem; margin-bottom: 5px; font-weight: 600; }
+        .form-group input, .form-group textarea { 
+            width: 100%; padding: 10px; box-sizing: border-box; 
+            border: 1px solid #ccc; border-radius: 8px; font-family: 'Prompt'; 
+            background: var(--bg-color); color: var(--text-color);
+        }
+        .form-group textarea { resize: none; height: 60px; }
+        .text-danger { color: red; }
+
+        /* Hero */
+        .hero { text-align: center; padding: 2rem 5%; }
+        h1 { font-size: 2.5rem; margin-bottom: 0.5rem; }
+        
+        /* Interactive Hero Display */
+        .display-container { position: relative; max-width: 600px; margin: 0 auto 20px; }
+        #hero-img { width: 100%; border-radius: 12px; transition: 0.3s; }
+        #hero-3d { width: 100%; height: 400px; display: none; }
+
+        /* Improved Feature Labels & Lines */
+        .feature-label {
+            position: absolute; background: rgba(17, 17, 17, 0.9); color: #fff; padding: 8px 14px;
+            border-radius: 8px; font-size: 0.75rem; opacity: 0; transition: opacity 0.5s ease;
+            pointer-events: none; white-space: nowrap; transform: translateY(10px);
+            border: 1px solid var(--accent-color);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+            z-index: 10;
+        }
+        .feature-label.show { opacity: 1; transform: translateY(0); }
+        
+        /* The lines connecting labels to the product */
+        .feature-label::after {
+            content: '';
+            position: absolute;
+            background-color: var(--accent-color);
+            opacity: 1;
+            z-index: -1;
+            height: 2px;
+        }
+
+        #lbl-cam { top: 40%; right: 5%; }
+        #lbl-cam::after { width: 15px; top: 50%; right: 100%; } /* ลดความยาวเส้นจาก 50px เหลือ 15px */
+        
+        /* ปรับให้ช่องปล่อยลมบริสุทธิ์ ใกล้เครื่องมากขึ้น */
+        #lbl-air { top: 58%; right: 12%; }
+        #lbl-air::after { width: 25px; top: 50%; right: 100%; }
+        
+        #lbl-mag { top: 75%; right: 10%; }
+        #lbl-mag::after { width: 15px; top: 50%; right: 100%; } /* ลดความยาวเส้นจาก 35px เหลือ 15px */
+        
+        #lbl-hepa { bottom: 15%; left: 5%; }
+        #lbl-hepa::after { width: 30px; top: 50%; left: 100%; }
+        
+        /* ปรับให้ Voice Assistant สูงขึ้น และขยับไปทางขวามากขึ้น */
+        #lbl-voice { bottom: 8%; right: -8%; } 
+        #lbl-voice::after { 
+            width: 25px; /* ลดความยาวเส้นลงเพื่อไม่ให้ชี้ทะลุขอบ */
+            top: 50%; 
+            right: 100%; 
+            transform: rotate(10deg); /* ปรับองศาการชี้ให้ยกขึ้นเข้าหาขอบฐานพอดี */
+            transform-origin: right center;
+        }
+        
+        .btn-buy, .btn-action {
+            background: var(--text-color); color: var(--bg-color);
+            padding: 10px 24px; border-radius: 30px; border: none;
+            cursor: pointer; font-family: 'Prompt'; font-weight: 600; margin: 5px;
+            transition: 0.3s; font-size: 0.9rem;
+        }
+        .btn-buy:hover, .btn-action:hover { opacity: 0.8; transform: scale(1.05); }
+        .btn-outline { background: transparent; color: var(--text-color); border: 2px solid var(--text-color); }
+
+        /* Animation สำหรับส่วนที่ซ่อนอยู่ (ฟังก์ชันเพิ่มเติม) */
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .hidden-ui-box {
+            display: none; justify-content: center; gap: 15px; margin-top: 15px;
+            animation: fadeInDown 0.3s ease forwards; flex-wrap: wrap;
+        }
+
+        /* AQI Section */
+        .aqi-section { padding: 4rem 5%; background: var(--gray-light); }
+        .aqi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 2rem; }
+        .aqi-card { padding: 20px; border-radius: 12px; background: var(--bg-color); box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .aqi-color { width: 40px; height: 4px; margin: 10px 0; border-radius: 2px; }
+
+        /* Accessories Slider */
+        .accessories { padding: 4rem 5%; }
+        
+        .carousel-wrapper { position: relative; max-width: 100%; margin: 0 auto; display: flex; align-items: center; }
+        .scroll-btn {
+            background: rgba(0,0,0,0.6); color: white; border: none; border-radius: 50%;
+            width: 40px; height: 40px; cursor: pointer; position: absolute; z-index: 10;
+            display: flex; justify-content: center; align-items: center; transition: 0.2s;
+        }
+        .scroll-btn:hover { background: rgba(0,0,0,0.9); transform: scale(1.1); }
+        .scroll-btn:active { transform: scale(0.9); } 
+        .scroll-left { left: 10px; }
+        .scroll-right { right: 10px; }
+
+        .carousel { display: flex; overflow-x: auto; gap: 20px; padding: 20px 40px; scroll-snap-type: x mandatory; scrollbar-width: none; flex-grow: 1; scroll-behavior: smooth;}
+        .carousel::-webkit-scrollbar { display: none; }
+        
+        .product-card {
+            min-width: 260px; background: var(--bg-color); border-radius: 12px;
+            padding: 15px; scroll-snap-align: start; box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            display: flex; flex-direction: column; justify-content: space-between; border: 1px solid var(--gray-light);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .product-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
+        
+        .product-card img { 
+            width: 100%; height: 180px; object-fit: contain; border-radius: 8px; margin-bottom: 10px; 
+            background: #ffffff; 
+        }
+        
+        .product-card h3 { font-size: 1.1rem; margin: 0 0 5px; }
+        .product-card p.desc { 
+            font-size: 0.8rem; color: gray; margin: 0 0 10px; line-height: 1.5;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; 
+            overflow: hidden; height: 36px;
+        }
+        .product-actions { display: flex; gap: 8px; margin-top: 10px; }
+        .product-actions .btn-fav { flex: 0 0 45px; background: transparent; border: 1px solid var(--text-color); color: var(--text-color); border-radius: 8px; cursor: pointer; transition: 0.3s; }
+        .product-actions .btn-fav:hover { background: #ffe6e6; border-color: red; color: red; }
+        .product-actions .btn-add { flex: 1; background: var(--text-color); color: var(--bg-color); border: none; border-radius: 8px; padding: 10px; font-family: 'Prompt'; font-weight: 600; cursor: pointer; transition: 0.3s; }
+        .product-actions .btn-add:hover { opacity: 0.8; }
+
+        /* App UI */
+        .app-mockup-section { padding: 5rem 5%; background: var(--bg-color); display: flex; flex-wrap: wrap; justify-content: center; gap: 4rem; align-items: center;}
+        
+        .smartphone { 
+            width: 300px; height: 600px; border-radius: 40px; 
+            background: #000; overflow: hidden; position: relative; 
+            box-shadow: 0 0 0 4px #444, 0 20px 40px rgba(0,0,0,0.25); 
+        }
+        .notch { 
+            position: absolute; top: 0; left: 50%; transform: translateX(-50%); 
+            width: 120px; height: 25px; background: #000; 
+            border-bottom-left-radius: 18px; border-bottom-right-radius: 18px; z-index: 100; 
+        }
+
+        .app-ui { width: 100%; height: 100%; background: #111; color: #fff; padding: 20px; box-sizing: border-box; }
+        .app-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; }
+        .app-btn { background: #222; border: 1px solid #333; border-radius: 12px; padding: 15px; text-align: center; cursor: pointer; position: relative; transition: 0.3s;}
+        .app-btn:hover { background: #333; }
+        .app-btn i { font-size: 1.5rem; margin-bottom: 5px; color: var(--accent-color); }
+        .app-tooltip {
+            position: absolute; bottom: 110%; left: 50%; transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.95); color: #000; padding: 8px 12px;
+            border-radius: 8px; font-size: 0.75rem; opacity: 0; visibility: hidden;
+            transition: 0.3s; width: 150px; text-align: center; z-index: 10;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); pointer-events: none;
+        }
+        .app-btn:nth-child(even) .app-tooltip { left: auto; right: 0; transform: translateX(0); }
+        .app-btn:nth-child(odd) .app-tooltip { left: 0; transform: translateX(0); }
+        .pm-circle:hover .app-tooltip, .app-btn:hover .app-tooltip { opacity: 1; visibility: visible; bottom: 120%; }
+        .pm-circle { width: 160px; height: 160px; border-radius: 50%; border: 4px solid var(--aqi-blue); display: flex; flex-direction: column; justify-content: center; align-items: center; margin: 0 auto 30px; position: relative; cursor:pointer;}
+
+        /* Text Sections */
+        .text-section { padding: 4rem 5%; max-width: 800px; margin: 0 auto; text-align: center; }
+        .text-section h2 { margin-bottom: 20px; font-size: 2rem;}
+        .text-section p { color: gray; line-height: 1.6; margin-bottom: 10px;}
+    </style>
+</head>
+<body>
+
+    <div id="toast"><i class="fa-solid fa-check-circle" style="color:#00b050;"></i> <span id="toastMsg"></span></div>
+
+    <nav>
+        <div style="font-weight: bold; font-size: 1.2rem; letter-spacing: 2px;">LUNA PURE</div>
+        <div class="nav-links">
+            <a href="#products" data-th="สินค้า" data-en="Products">สินค้า</a>
+            <a href="#about" data-th="เกี่ยวกับเรา" data-en="About Us">เกี่ยวกับเรา</a>
+            <a href="#contact" data-th="ติดต่อ" data-en="Contact">ติดต่อ</a>
+        </div>
+        <div class="nav-icons">
+            <span class="icon-btn" onclick="toggleLang()" id="langBtn" style="font-size: 0.9rem; font-weight: bold;">EN</span>
+            <div class="icon-btn" onclick="toggleModal('wishlistModal')">
+                <i class="fa-regular fa-heart"></i>
+                <span class="badge" id="favBadge">0</span>
+            </div>
+            <div class="icon-btn" onclick="toggleModal('cartModal')">
+                <i class="fa-solid fa-cart-shopping"></i>
+                <span class="badge" id="cartBadge">0</span>
+            </div>
+        </div>
+    </nav>
+
+    <div id="cartModal" class="modal">
+        <div class="modal-header">
+            <span data-th="ตะกร้าสินค้า" data-en="Shopping Cart">ตะกร้าสินค้า</span>
+            <i class="fa-solid fa-xmark close-btn" onclick="toggleModal('cartModal')"></i>
+        </div>
+        <div class="modal-items" id="cartItems"></div>
+        <div class="modal-footer">
+            <div style="display:flex; justify-content:space-between; margin-bottom:10px; font-weight:bold;">
+                <span data-th="ยอดรวม" data-en="Total">ยอดรวม</span>
+                <span id="cartTotal">฿0</span>
+            </div>
+            <button class="checkout-btn" onclick="openCheckout()" data-th="ชำระเงิน" data-en="Checkout">ชำระเงิน</button>
+        </div>
+    </div>
+
+    <div id="checkoutModal" class="modal" style="width: 400px; z-index: 2500;">
+        <div class="modal-header">
+            <span data-th="ข้อมูลการจัดส่ง" data-en="Shipping Info">ข้อมูลการจัดส่ง</span>
+            <i class="fa-solid fa-arrow-left close-btn" onclick="closeCheckout()"></i>
+        </div>
+        <form id="fakeCheckoutForm" class="modal-items" onsubmit="processFakeCheckout(event)">
+            <div class="form-group">
+                <label><span data-th="ชื่อ - นามสกุล" data-en="Full Name">ชื่อ - นามสกุล</span> <span class="text-danger">*</span></label>
+                <input type="text" required>
+            </div>
+            <div class="form-group">
+                <label><span data-th="เบอร์โทรศัพท์" data-en="Phone Number">เบอร์โทรศัพท์</span> <span class="text-danger">*</span></label>
+                <input type="tel" required>
+            </div>
+            <div class="form-group">
+                <label><span data-th="ที่อยู่จัดส่ง" data-en="Address">ที่อยู่จัดส่ง</span> <span class="text-danger">*</span></label>
+                <textarea required></textarea>
+            </div>
+            <div class="form-group">
+                <label><span data-th="จังหวัด" data-en="Province/State">จังหวัด</span> <span class="text-danger">*</span></label>
+                <input type="text" required>
+            </div>
+            <div class="form-group">
+                <label><span data-th="รหัสไปรษณีย์" data-en="Postal Code">รหัสไปรษณีย์</span> <span class="text-danger">*</span></label>
+                <input type="text" required>
+            </div>
+            <div style="margin-top: 20px;">
+                <button type="submit" class="checkout-btn" id="nextBtn" data-th="ถัดไป (Next)" data-en="Next">ถัดไป (Next)</button>
+            </div>
+        </form>
+    </div>
+
+    <div id="wishlistModal" class="modal">
+        <div class="modal-header">
+            <span data-th="รายการโปรด" data-en="Wishlist">รายการโปรด</span>
+            <i class="fa-solid fa-xmark close-btn" onclick="toggleModal('wishlistModal')"></i>
+        </div>
+        <div class="modal-items" id="wishlistItems"></div>
+    </div>
+
+    <section class="hero">
+        <h1>LUNA PURE</h1>
+        <p data-th="เครื่องฟอกอากาศพระจันทร์ลอยได้อัจฉริยะ" data-en="Smart Levitating Moon Air Purifier">เครื่องฟอกอากาศพระจันทร์ลอยได้อัจฉริยะ</p>
+        
+        <div class="display-container">
+            <img id="hero-img" src="DD.jpg" alt="Luna Pure">
+            <model-viewer id="hero-3d" src="Meshy_AI_Crescent_Moon_on_a_Pe_0319183156_texture1.glb" auto-rotate camera-controls></model-viewer>
+            
+            <div class="feature-label" id="lbl-cam" data-th="เลนส์กล้องวงจรปิดซ่อน" data-en="Hidden Security Camera Lens">เลนส์กล้องวงจรปิดซ่อน</div>
+            <div class="feature-label" id="lbl-air" data-th="ช่องปล่อยลมบริสุทธิ์" data-en="Clean Airflows">ช่องปล่อยลมบริสุทธิ์</div>
+            <div class="feature-label" id="lbl-mag" data-th="แสงพลังงานแม่เหล็ก" data-en="Magnetic Energy Light">แสงพลังงานแม่เหล็ก</div>
+            <div class="feature-label" id="lbl-hepa" data-th="ช่องใส่ไส้กรอง HEPA 13" data-en="HEPA 13 Filter Base">ช่องใส่ไส้กรอง HEPA 13</div>
+            <div class="feature-label" id="lbl-voice" data-th="ระบบสั่งงานด้วยเสียง" data-en="Voice Assistant Active">ระบบสั่งงานด้วยเสียง</div>
+        </div>
+
+        <h2 style="margin-top: 20px;">฿ 3,990</h2>
+        <div>
+            <button class="btn-action btn-outline" onclick="addToWishlist('Luna Pure (Main Set)', 3990, 'DD.jpg')">
+                <i class="fa-regular fa-heart"></i> <span data-th="บันทึก" data-en="Save">บันทึก</span>
+            </button>
+            <button class="btn-action" onclick="addToCart('Luna Pure (Main Set)', 3990, 'DD.jpg')">
+                <i class="fa-solid fa-cart-shopping"></i> <span data-th="หยิบใส่ตะกร้า" data-en="Add to Cart">หยิบใส่ตะกร้า</span>
+            </button>
+        </div>
+
+        <div style="margin-top: 30px;">
+            <div style="cursor: pointer; color: gray; font-size: 0.9rem; display: inline-block; transition: 0.3s;" onclick="toggleExtraOptions()">
+                <span data-th="ฟังก์ชันแสดงผลเพิ่มเติม" data-en="Display Options">ฟังก์ชันแสดงผลเพิ่มเติม</span> <i class="fa-solid fa-chevron-down" id="extra-icon"></i>
+            </div>
+            
+            <div id="extra-options-container" class="hidden-ui-box">
+                <button class="btn-action btn-outline" style="border-color: var(--accent-color); font-size: 0.85rem;" onclick="toggle3D()" id="btn-3d" data-th="<i class='fa-solid fa-cube'></i> หมุนดู 3D Model" data-en="<i class='fa-solid fa-cube'></i> View 3D Model"><i class="fa-solid fa-cube"></i> หมุนดู 3D Model</button>
+                <button class="btn-action btn-outline" style="border-color: var(--accent-color); font-size: 0.85rem;" onclick="showFeatures()" id="btn-feat" data-th="<i class='fa-solid fa-wand-magic-sparkles'></i> ดูคุณสมบัติ (Features)" data-en="<i class='fa-solid fa-wand-magic-sparkles'></i> View Features"><i class="fa-solid fa-wand-magic-sparkles"></i> ดูคุณสมบัติ (Features)</button>
+            </div>
+        </div>
+
+    </section>
+
+    <section class="accessories" id="products">
+        <h2 style="text-align: center; margin-bottom: 30px;" data-th="อะไหล่และอุปกรณ์เสริม" data-en="Accessories & Refills">อะไหล่และอุปกรณ์เสริม</h2>
+        
+        <div class="carousel-wrapper">
+            <button class="scroll-btn scroll-left" onclick="scrollCarousel(-1)"><i class="fa-solid fa-chevron-left"></i></button>
+            
+            <div class="carousel" id="productCarousel">
+                <div class="product-card">
+                    <img src="2.png" alt="Moon HEPA Filter" onerror="this.src='https://via.placeholder.com/250x180?text=Moon+Filter+Image'">
+                    <div>
+                        <h3>Luna HEPA 13 Filter</h3>
+                        <p class="desc" data-th="ไส้กรอง PM 2.5 (15x15x3 ซม.) วิธีใส่: เปิดฝาแม่เหล็กใต้ฐานแล้วล็อก" data-en="Filter for PM 2.5 (15x15x3 cm). Open magnetic base and lock.">ไส้กรอง PM 2.5 (15x15x3 ซม.) วิธีใส่: เปิดฝาแม่เหล็กใต้ฐานแล้วล็อก</p>
+                        <h4>฿ 890</h4>
+                    </div>
+                    <div class="product-actions">
+                        <button class="btn-fav" onclick="addToWishlist('Luna HEPA Filter', 890, '2.png')"><i class="fa-regular fa-heart"></i></button>
+                        <button class="btn-add" onclick="addToCart('Luna HEPA Filter', 890, '2.png')"><i class="fa-solid fa-cart-plus"></i> Add to Cart</button>
+                    </div>
+                </div>
+
+                <script>
+                    const aromas = [
+                        { id: 1, th_name: "Lavender (ลาเวนเดอร์)", en_name: "Lavender", th_desc: "ผ่อนคลาย หลับสบาย หยดลงในช่องใส่ฐาน 3-5 หยด", en_desc: "Relaxing and sleep-inducing. Add 3-5 drops to base." },
+                        { id: 2, th_name: "Ocean (โอเชี่ยน)", en_name: "Ocean", th_desc: "สดชื่น สดใส เหมือนอยู่ทะเล หยดลงในช่องใส่ฐาน 3-5 หยด", en_desc: "Fresh ocean breeze. Add 3-5 drops to base." },
+                        { id: 3, th_name: "Jasmine (มะลิ)", en_name: "Jasmine", th_desc: "หอมละมุน ลดความเครียด หยดลงในช่องใส่ฐาน 3-5 หยด", en_desc: "Gentle and stress-relieving. Add 3-5 drops to base." },
+                        { id: 4, th_name: "Rose (กุหลาบ)", en_name: "Rose", th_desc: "หรูหรา โรแมนติก หยดลงในช่องใส่ฐาน 3-5 หยด", en_desc: "Luxurious and romantic. Add 3-5 drops to base." },
+                        { id: 5, th_name: "Sandalwood (ไม้จันทน์)", en_name: "Sandalwood", th_desc: "อบอุ่น มีสมาธิ หยดลงในช่องใส่ฐาน 3-5 หยด", en_desc: "Warm and focused. Add 3-5 drops to base." },
+                        { id: 6, th_name: "Vanilla (วานิลลา)", en_name: "Vanilla", th_desc: "หอมหวาน ละมุนละไม หยดลงในช่องใส่ฐาน 3-5 หยด", en_desc: "Sweet and smooth. Add 3-5 drops to base." },
+                        { id: 7, th_name: "Peppermint (เปปเปอร์มินต์)", en_name: "Peppermint", th_desc: "ตื่นตัว โล่งจมูก หยดลงในช่องใส่ฐาน 3-5 หยด", en_desc: "Awakening and clearing. Add 3-5 drops to base." },
+                        { id: 8, th_name: "Lemongrass (ตะไคร้)", en_name: "Lemongrass", th_desc: "สไตล์สปา ไล่ยุงได้ หยดลงในช่องใส่ฐาน 3-5 หยด", en_desc: "Spa style, repels insects. Add 3-5 drops to base." },
+                        { id: 9, th_name: "Eucalyptus (ยูคาลิปตัส)", en_name: "Eucalyptus", th_desc: "สดชื่น บรรเทาหวัด หยดลงในช่องใส่ฐาน 3-5 หยด", en_desc: "Refreshing, relieves cold. Add 3-5 drops to base." },
+                        { id: 10, th_name: "Chamomile (คาโมมายล์)", en_name: "Chamomile", th_desc: "คลายกังวล นุ่มนวล หยดลงในช่องใส่ฐาน 3-5 หยด", en_desc: "Anxiety relief, gentle. Add 3-5 drops to base." },
+                        { id: 11, th_name: "Full Set (10 กลิ่น)", en_name: "Full Set (10 Scents)", th_desc: "เซ็ตน้ำยาอโรม่า 10 ขวดสุดคุ้ม ครบทุกบรรยากาศ", en_desc: "Complete 10-bottle essential oil set." }
+                    ];
+                    
+                    aromas.forEach(aroma => {
+                        let price = aroma.id === 11 ? 1290 : 150; 
+                        let filename = `smoke${aroma.id}.png`; 
+
+                        document.write(`
+                        <div class="product-card">
+                            <img src="${filename}" alt="Aroma" onerror="this.src='https://via.placeholder.com/250x180?text=Smoke+${aroma.id}'">
+                            <div>
+                                <h3 data-th="No.${aroma.id} ${aroma.th_name}" data-en="No.${aroma.id} ${aroma.en_name}">No.${aroma.id} ${aroma.th_name}</h3>
+                                <p class="desc" data-th="Essential Oil (15 ml) - ${aroma.th_desc}" data-en="Essential Oil (15 ml) - ${aroma.en_desc}">Essential Oil (15 ml) - ${aroma.th_desc}</p>
+                                <h4>฿ ${price.toLocaleString()}</h4>
+                            </div>
+                            <div class="product-actions">
+                                <button class="btn-fav" onclick="addToWishlist('Aroma No.${aroma.id}', ${price}, '${filename}')"><i class="fa-regular fa-heart"></i></button>
+                                <button class="btn-add" onclick="addToCart('Aroma No.${aroma.id}', ${price}, '${filename}')"><i class="fa-solid fa-cart-plus"></i> Add to Cart</button>
+                            </div>
+                        </div>
+                        `);
+                    });
+                </script>
+            </div>
+
+            <button class="scroll-btn scroll-right" onclick="scrollCarousel(1)"><i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+    </section>
+
+    <section class="app-mockup-section">
+        <div style="max-width: 400px;">
+            <h2 data-th="ควบคุมทุกอย่างผ่านปลายนิ้ว" data-en="Control via App">ควบคุมทุกอย่างผ่านปลายนิ้ว</h2>
+            <p data-th="เชื่อมต่อ LUNA PURE เข้ากับสมาร์ทโฟนของคุณ สั่งเปิดเครื่อง พ่นกลิ่นอโรม่า หรือเปิดแสงออโรร่าล่วงหน้าก่อนถึงบ้าน พร้อมเช็คความสะอาดของไส้กรองและดูกล้องวงจรปิดได้แบบ Real-time" data-en="Connect LUNA PURE to your smartphone. Turn it on, spray aroma, or check the camera real-time.">เชื่อมต่อ LUNA PURE เข้ากับสมาร์ทโฟนของคุณ สั่งเปิดเครื่อง พ่นกลิ่นอโรม่า หรือเปิดแสงออโรร่าล่วงหน้าก่อนถึงบ้าน พร้อมเช็คความสะอาดของไส้กรองและดูกล้องวงจรปิดได้แบบ Real-time</p>
+            <ul style="line-height: 1.8; list-style-type: none; padding-left: 0; margin-top: 20px;">
+                <li><i class="fa-solid fa-check" style="color:var(--accent-color); margin-right: 10px;"></i> <span data-th="แจ้งเตือนไส้กรองตันอัตโนมัติ" data-en="Auto Filter Replacement Alert">แจ้งเตือนไส้กรองตันอัตโนมัติ</span></li>
+                <li><i class="fa-solid fa-check" style="color:var(--accent-color); margin-right: 10px;"></i> <span data-th="ควบคุมความชื้นและอุณหภูมิ" data-en="Humidity & Temp Control">ควบคุมความชื้นและอุณหภูมิ</span></li>
+                <li><i class="fa-solid fa-check" style="color:var(--accent-color); margin-right: 10px;"></i> <span data-th="Live-view ซีเคียวริตี้แคม" data-en="Live-view Security Camera">Live-view ซีเคียวริตี้แคม</span></li>
+            </ul>
+        </div>
+
+        <div class="smartphone">
+            <div class="notch"></div>
+            <div class="app-ui">
+                <div style="text-align: center; margin: 30px 0 20px;">
+                    <h3 style="margin:0; font-weight: 400;">LUNA PURE</h3>
+                    <span style="font-size: 0.7rem; color: #00b050;">● Connected</span>
+                </div>
+
+                <div class="pm-circle">
+                    <p style="margin:0; font-size: 0.8rem;">PM 2.5</p>
+                    <h2 style="margin:0; font-size: 3rem;">12</h2>
+                    <p style="margin:0; font-size: 0.8rem; color:#aaa;">Excellent</p>
+                    <div class="app-tooltip" data-th="อากาศบริสุทธิ์มาก ฝุ่นน้อยกว่าเกณฑ์" data-en="Pure air. Dust level is excellent.">อากาศบริสุทธิ์มาก ฝุ่นน้อยกว่าเกณฑ์</div>
+                </div>
+
+                <div style="display: flex; gap: 20px; justify-content: center; margin-bottom: 30px; font-size: 0.9rem;">
+                    <div><i class="fa-solid fa-temperature-half"></i> Temp: 26°C</div>
+                    <div><i class="fa-solid fa-droplet"></i> Filter: 98%</div>
+                </div>
+
+                <div class="app-controls">
+                    <div class="app-btn">
+                        <i class="fa-solid fa-power-off"></i><br>Power
+                        <div class="app-tooltip" data-th="แตะเพื่อเปิด/ปิดเครื่องฟอกอากาศ" data-en="Tap to turn Purifier On/Off">แตะเพื่อเปิด/ปิดเครื่องฟอกอากาศ</div>
+                    </div>
+                    <div class="app-btn">
+                        <i class="fa-solid fa-wind"></i><br>Purifier
+                        <div class="app-tooltip" data-th="ปรับระดับพัดลม 1-3 หรือตั้ง Auto" data-en="Adjust fan speed 1-3 or Auto">ปรับระดับพัดลม 1-3 หรือตั้ง Auto</div>
+                    </div>
+                    <div class="app-btn">
+                        <i class="fa-solid fa-spa"></i><br>Aroma
+                        <div class="app-tooltip" data-th="สั่งพ่นอโรม่าล่วงหน้า 15 นาที" data-en="Schedule aroma spray in advance">สั่งพ่นอโรม่าล่วงหน้า 15 นาที</div>
+                    </div>
+                    <div class="app-btn">
+                        <i class="fa-solid fa-video"></i><br>Camera
+                        <div class="app-tooltip" data-th="เปิดดูกล้องแบบ Real-time" data-en="View Real-time Camera feed">เปิดดูกล้องแบบ Real-time</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="aqi-section">
+        <h2 style="text-align: center;" data-th="ระบบเซนเซอร์วัดคุณภาพอากาศ" data-en="Air Quality Sensors">ระบบเซนเซอร์วัดคุณภาพอากาศ</h2>
+        <div class="aqi-grid">
+            <div class="aqi-card">
+                <h3>0 - 15</h3>
+                <div class="aqi-color" style="background: #00b0f0;"></div>
+                <p style="font-size: 0.9rem;" data-th="อากาศดีมาก (สีฟ้า)<br>บริสุทธิ์ เหมาะสูดหายใจลึกๆ ไม่มีผลกระทบใดๆ" data-en="Excellent (Blue)<br>Pure air. Perfect for deep breaths. No health impacts.">อากาศดีมาก (สีฟ้า)<br>บริสุทธิ์ เหมาะสูดหายใจลึกๆ ไม่มีผลกระทบใดๆ</p>
+            </div>
+            <div class="aqi-card">
+                <h3>16 - 25</h3>
+                <div class="aqi-color" style="background: #00b050;"></div>
+                <p style="font-size: 0.9rem;" data-th="อากาศดี (สีเขียว)<br>อยู่ในเกณฑ์มาตรฐาน ใช้ชีวิตประจำวันได้ตามปกติ" data-en="Good (Green)<br>Standard quality. Enjoy normal outdoor activities.">อากาศดี (สีเขียว)<br>อยู่ในเกณฑ์มาตรฐาน ใช้ชีวิตประจำวันได้ตามปกติ</p>
+            </div>
+            <div class="aqi-card">
+                <h3>26 - 37</h3>
+                <div class="aqi-color" style="background: #ffc000;"></div>
+                <p style="font-size: 0.9rem;" data-th="ปานกลาง (สีเหลือง)<br>เริ่มมีฝุ่นสะสม ผู้ป่วยทางเดินหายใจควรสังเกตอาการ" data-en="Moderate (Yellow)<br>Dust accumulating. Sensitive groups should take care.">ปานกลาง (สีเหลือง)<br>เริ่มมีฝุ่นสะสม ผู้ป่วยทางเดินหายใจควรสังเกตอาการ</p>
+            </div>
+            <div class="aqi-card">
+                <h3>38 - 75</h3>
+                <div class="aqi-color" style="background: #ff7000;"></div>
+                <p style="font-size: 0.9rem;" data-th="เริ่มมีผลกระทบ (สีส้ม)<br>ฝุ่นซึมเข้ากระแสเลือดได้ ควรลดกิจกรรมนอกบ้าน" data-en="Unhealthy (Orange)<br>PM2.5 can enter bloodstream. Reduce outdoor time.">เริ่มมีผลกระทบ (สีส้ม)<br>ฝุ่นซึมเข้ากระแสเลือดได้ ควรลดกิจกรรมนอกบ้าน</p>
+            </div>
+            <div class="aqi-card">
+                <h3>76 - 100+</h3>
+                <div class="aqi-color" style="background: #ff0000;"></div>
+                <p style="font-size: 0.9rem;" data-th="อันตราย (สีแดง)<br>มลพิษระดับทำลายเซลล์ หลีกเลี่ยงกิจกรรมนอกบ้านเด็ดขาด" data-en="Hazardous (Red)<br>Cell-damaging pollution. Avoid going outside completely.">อันตราย (สีแดง)<br>มลพิษระดับทำลายเซลล์ หลีกเลี่ยงกิจกรรมนอกบ้านเด็ดขาด</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="text-section" id="about">
+        <h2 data-th="เกี่ยวกับเรา (About Us)" data-en="About Us">เกี่ยวกับเรา (About Us)</h2>
+        <p data-th="LUNA PURE เกิดจากความตั้งใจที่จะผสานงานศิลปะเข้ากับเทคโนโลยีเพื่อสุขภาพ เราเชื่อว่าเครื่องฟอกอากาศไม่จำเป็นต้องเป็นแค่กล่องสี่เหลี่ยม แต่สามารถเป็นของตกแต่งบ้านที่มอบทั้งความสวยงามและอากาศบริสุทธิ์ให้กับคุณและคนที่คุณรัก" data-en="LUNA PURE was born from the desire to blend art with health technology. We believe an air purifier shouldn't just be a box, but a piece of home decor that provides both beauty and pure air for you and your loved ones.">LUNA PURE เกิดจากความตั้งใจที่จะผสานงานศิลปะเข้ากับเทคโนโลยีเพื่อสุขภาพ เราเชื่อว่าเครื่องฟอกอากาศไม่จำเป็นต้องเป็นแค่กล่องสี่เหลี่ยม แต่สามารถเป็นของตกแต่งบ้านที่มอบทั้งความสวยงามและอากาศบริสุทธิ์ให้กับคุณและคนที่คุณรัก</p>
+    </section>
+
+    <section class="text-section" id="contact" style="background: var(--gray-light); max-width: 100%;">
+        <h2 data-th="ติดต่อเรา (Contact Us)" data-en="Contact Us">ติดต่อเรา (Contact Us)</h2>
+        <p style="font-size: 1.2rem; font-weight: bold; color: var(--text-color);">+66 99 214 2504</p>
+        <p data-th="999 อาคารออโรร่าทาวเวอร์, ชั้น 42, ถนนสุขุมวิท, วัฒนา, กรุงเทพมหานคร 10110" data-en="999 Aurora Tower, 42nd FL, Sukhumvit Road, Watthana, Bangkok 10110">999 อาคารออโรร่าทาวเวอร์, ชั้น 42, ถนนสุขุมวิท, วัฒนา, กรุงเทพมหานคร 10110</p>
+        <p>Email: contact@lunapure-th.com</p>
+    </section>
+
+    <script>
+        // Language Toggle
+        let currentLang = 'th';
+        function toggleLang() {
+            currentLang = currentLang === 'th' ? 'en' : 'th';
+            document.getElementById('langBtn').innerText = currentLang === 'th' ? 'EN' : 'TH';
+            
+            document.querySelectorAll('[data-th]').forEach(el => {
+                if(el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                   // Ignore input placeholder swap to avoid wiping user input logic for now
+                } else {
+                    el.innerHTML = el.getAttribute(`data-${currentLang}`);
+                }
+            });
+        }
+
+        // Toggle Extra Options (The 'vvv' hidden menu)
+        function toggleExtraOptions() {
+            const container = document.getElementById('extra-options-container');
+            const icon = document.getElementById('extra-icon');
+            
+            if(container.style.display === 'none' || container.style.display === '') {
+                container.style.display = 'flex';
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-up');
+            } else {
+                container.style.display = 'none';
+                icon.classList.remove('fa-chevron-up');
+                icon.classList.add('fa-chevron-down');
+            }
+        }
+
+        // JS สำหรับปุ่มเลื่อน Carousel
+        function scrollCarousel(direction) {
+            const carousel = document.getElementById('productCarousel');
+            carousel.scrollBy({ left: direction * 350, behavior: 'smooth' });
+        }
+
+        // Hero Image vs 3D Logic
+        function toggle3D() {
+            const img = document.getElementById('hero-img');
+            const model = document.getElementById('hero-3d');
+            const btn = document.getElementById('btn-3d');
+            
+            document.querySelectorAll('.feature-label').forEach(lbl => lbl.classList.remove('show'));
+
+            if(img.style.display !== 'none') {
+                img.style.display = 'none';
+                model.style.display = 'block';
+                btn.setAttribute('data-th', '<i class="fa-solid fa-image"></i> กลับไปดูรูป (Back to Image)');
+                btn.setAttribute('data-en', '<i class="fa-solid fa-image"></i> Back to Image');
+                btn.innerHTML = currentLang === 'th' ? btn.getAttribute('data-th') : btn.getAttribute('data-en');
+            } else {
+                img.style.display = 'block';
+                model.style.display = 'none';
+                btn.setAttribute('data-th', '<i class="fa-solid fa-cube"></i> หมุนดู 3D Model');
+                btn.setAttribute('data-en', '<i class="fa-solid fa-cube"></i> View 3D Model');
+                btn.innerHTML = currentLang === 'th' ? btn.getAttribute('data-th') : btn.getAttribute('data-en');
+            }
+        }
+
+        function showFeatures() {
+            document.getElementById('hero-img').style.display = 'block';
+            document.getElementById('hero-3d').style.display = 'none';
+            const btn3d = document.getElementById('btn-3d');
+            btn3d.setAttribute('data-th', '<i class="fa-solid fa-cube"></i> หมุนดู 3D Model');
+            btn3d.setAttribute('data-en', '<i class="fa-solid fa-cube"></i> View 3D Model');
+            btn3d.innerHTML = currentLang === 'th' ? btn3d.getAttribute('data-th') : btn3d.getAttribute('data-en');
+
+            const labels = ['lbl-cam', 'lbl-air', 'lbl-mag', 'lbl-hepa', 'lbl-voice'];
+            labels.forEach(id => document.getElementById(id).classList.remove('show'));
+            
+            labels.forEach((id, index) => {
+                setTimeout(() => {
+                    document.getElementById(id).classList.add('show');
+                }, index * 400);
+            });
+        }
+
+        function showToast(iconClass, message, color = "#00b050") {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').innerText = message;
+            toast.querySelector('i').className = `fa-solid ${iconClass}`;
+            toast.querySelector('i').style.color = color;
+            
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        let cart = [];
+        let wishlist = [];
+
+        function toggleModal(id) {
+            const modal = document.getElementById(id);
+            modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+        function addToCart(name, price, image) {
+            cart.push({name, price, image});
+            updateCartUI();
+            const msg = currentLang === 'th' ? `เพิ่ม ${name} ลงตะกร้าแล้ว!` : `Added ${name} to cart!`;
+            showToast('fa-cart-arrow-down', msg);
+        }
+
+        function addToWishlist(name, price, image) {
+            if(!wishlist.some(item => item.name === name)) {
+                wishlist.push({name, price, image});
+                updateWishlistUI();
+                const msg = currentLang === 'th' ? `เพิ่ม ${name} ลงรายการโปรดแล้ว!` : `Added ${name} to wishlist!`;
+                showToast('fa-heart', msg, 'red');
+            } else {
+                const msg = currentLang === 'th' ? 'สินค้านี้อยู่ในรายการโปรดแล้ว' : 'Item is already in wishlist';
+                showToast('fa-info-circle', msg, '#d4af37');
+            }
+        }
+
+        function updateCartUI() {
+            const container = document.getElementById('cartItems');
+            const badge = document.getElementById('cartBadge');
+            const totalEl = document.getElementById('cartTotal');
+            
+            container.innerHTML = '';
+            let total = 0;
+
+            cart.forEach((item, index) => {
+                total += item.price;
+                container.innerHTML += `
+                    <div class="cart-item">
+                        <img src="${item.image}" onerror="this.src='https://via.placeholder.com/50'">
+                        <div class="cart-item-info">
+                            <h4>${item.name}</h4>
+                            <p>฿${item.price.toLocaleString()}</p>
+                        </div>
+                        <i class="fa-solid fa-trash" style="cursor:pointer; color:red;" onclick="removeFromCart(${index})"></i>
+                    </div>
+                `;
+            });
+
+            badge.innerText = cart.length;
+            badge.style.display = cart.length > 0 ? 'block' : 'none';
+            totalEl.innerText = `฿${total.toLocaleString()}`;
+        }
+
+        function updateWishlistUI() {
+            const container = document.getElementById('wishlistItems');
+            const badge = document.getElementById('favBadge');
+            
+            container.innerHTML = '';
+            wishlist.forEach((item, index) => {
+                container.innerHTML += `
+                    <div class="cart-item">
+                        <img src="${item.image}" onerror="this.src='https://via.placeholder.com/50'">
+                        <div class="cart-item-info">
+                            <h4>${item.name}</h4>
+                            <p>฿${item.price.toLocaleString()}</p>
+                        </div>
+                        <i class="fa-solid fa-cart-plus" style="cursor:pointer; color:var(--text-color);" onclick="addToCart('${item.name}', ${item.price}, '${item.image}')"></i>
+                    </div>
+                `;
+            });
+
+            badge.innerText = wishlist.length;
+            badge.style.display = wishlist.length > 0 ? 'block' : 'none';
+        }
+
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            updateCartUI();
+        }
+
+        function openCheckout() {
+            if(cart.length === 0) {
+                const msg = currentLang === 'th' ? 'ตะกร้าสินค้าว่างเปล่า' : 'Cart is empty';
+                showToast('fa-triangle-exclamation', msg, 'red');
+                return;
+            }
+            document.getElementById('cartModal').style.display = 'none'; 
+            document.getElementById('checkoutModal').style.display = 'flex'; 
+        }
+
+        function closeCheckout() {
+            document.getElementById('checkoutModal').style.display = 'none';
+            document.getElementById('cartModal').style.display = 'flex'; 
+        }
+
+        function processFakeCheckout(event) {
+            event.preventDefault(); 
+            
+            const btn = document.getElementById('nextBtn');
+            btn.innerText = currentLang === 'th' ? 'กำลังประมวลผล...' : 'Processing...';
+            btn.style.opacity = '0.7';
+            
+            setTimeout(() => {
+                const msg = currentLang === 'th' ? 'ขออภัย ระบบจัดส่งและชำระเงินกำลังปิดปรับปรุงชั่วคราว!' : 'Sorry, Checkout system is under maintenance!';
+                showToast('fa-screwdriver-wrench', msg, 'red');
+                btn.innerText = currentLang === 'th' ? 'ถัดไป (Next)' : 'Next';
+                btn.style.opacity = '1';
+            }, 1500);
+        }
+    </script>
+</body>
+</html>
